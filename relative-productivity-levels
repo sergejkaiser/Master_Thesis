@@ -1,0 +1,899 @@
+version 12
+set more off /*full output is displayed
+w/o having to hit the space bar in between*/
+capture log close //closes any previously opened log-files
+clear all
+set maxvar  32767
+set matsize 11000
+global dir "/Users/sergej/Documents/Master/Thesis/June_Empirical_Analysis/Send_liza/"
+cd "$dir/Working_Data"
+log using "thesis_table_02_11_2015", text replace
+use "thesis_data2_va_exgr_20_july_2015.dta",clear
+
+ 
+
+# Based on  the Code from "What Goods Do Countries Trade? A Quantitative Exploration of Ricardo’s Ideas"
+# ARNAUD COSTINOT and DAVE DONALDSON
+# Massachusetts Institute of Technology
+# and
+# IVANA KOMUNJER 2012
+
+				eststo: quietly regress l_export_va alpha* beta* gamma*, nocons
+cd "$dir/Results"
+
+		* esttab using temp4.csv, replace not nostar b(a4) 
+		insheet using temp4.csv, clear
+
+		rename v1 name
+		rename v2 value
+		drop if name=="" | name=="N"
+		replace value = "" if value=="0"
+		destring value, replace
+		gen name1 = subinstr(name,"alpha", "",.)
+		replace name1 = subinstr(name1, "beta", "", .)
+		replace name1 = subinstr(name1, "gamma", "", .)
+		replace name1 = subinstr(name1, "o.", "", .)
+		split name1, gen(name1_) parse("dum")
+		rename name1_1 idtype_1
+		rename name1_3 id_2
+		gen idtype_2 = substr(name1_2,-1,1)
+		gen id_1 = subinstr(name1_2, "j", "", .)
+		replace id_1 = subinstr(id_1, "k", "", .)
+		drop name1_2
+		destring id_1 id_2, replace
+		drop name name1
+		
+		keep if idtype_1=="i" & idtype_2=="k"
+		
+		rename id_1 i_id
+		rename id_2 k_id
+			
+		drop idtype_1 idtype_2
+	
+		rename value FE_ik_
+		replace FE_ik = 0 if FE_ik ==.
+		
+		*reshape wide FE_ik, i(i_id) j(k_id)
+		*drop i_id
+		
+	
+		*gen i_id = _n
+		*reshape long FE_ik_, i(i_id) j(k_id)
+		gen z = exp(FE_ik_/15.06)
+		drop FE_ik_
+		rename i_id exporter
+		rename k_id industry
+		
+    tostring industry, replace
+    tostring exporter, replace
+ replace exporter= "Argentina"                 if exporter==	"1"
+  replace exporter=          "Australia"        if exporter==	"2"
+  replace exporter=           "Austria"	        if exporter==	"3"
+  replace exporter=            "Belgium"   	    if exporter==	"4"
+  replace exporter=           "Brazil" 		    if exporter==	"5"
+  replace exporter=           "Bulgaria"	    if exporter==	"6"
+  replace exporter=             "Canada"		if exporter==	"7"
+  replace exporter=              "Chile"		if exporter==	"8"
+  replace exporter=              "China" 		if exporter==	"9"
+  replace exporter=     "Chinese Taipei" 		if exporter==	"10"
+  replace exporter=         "Columbia"		    if exporter==	"11"
+  replace exporter=          "Croatia" 		    if exporter==	"12"
+  replace exporter=            "Cyprus" 		if exporter==	"13"
+  replace exporter=     "Czech Republic"		if exporter==	"14"
+  replace exporter=           "Denmark" 	    if exporter==	"15"
+  replace exporter=           "Estonia" 		if exporter==	"16"
+  replace exporter=           "Finland" 		if exporter==	"17"
+  replace exporter=           "France" 		    if exporter==	"18"
+  replace exporter=           "Germany" 		if exporter==	"19"
+  replace exporter=            "Greece" 	    if exporter==	"20"
+  replace exporter=  "Hong Kong, China" 		if exporter==	"21"
+  replace exporter=           "Hungary" 		if exporter==	"22"
+  replace exporter=             "India" 		if exporter==	"23"
+  replace exporter=         "Indonesia" 		if exporter==	"24"
+  replace exporter=           "Ireland" 		if exporter==	"25"
+  replace exporter=           "Israel"	     	if exporter==	"26"
+  replace exporter=             "Italy" 		if exporter==	"27"
+  replace exporter=             "Japan" 		if exporter==	"28"
+  replace exporter=           "Korea" 	      	if exporter==	"29"
+  replace exporter=          "Latvia" 		    if exporter==	"30"
+  replace exporter=       "Lithuania" 		    if exporter==	"31"
+  replace exporter=      "Luxembourg" 		    if exporter==	"32"
+  replace exporter=        "Malaysia" 	        if exporter==	"33"
+  replace exporter=         "Mexico" 		    if exporter==	"34"
+  replace exporter=    "Netherlands" 		    if exporter==	"35"
+  replace exporter=       "New Zealand" 	    if exporter==	"36"
+  replace exporter=           "Norway" 	        if exporter==	"37"
+  replace exporter=       "Philippines" 		if exporter==	"38"
+  replace exporter=           "Poland"   	    if exporter==	"39"
+  replace exporter=         "Portugal" 		    if exporter==	"40"
+  replace exporter= "Rest of the World" 	    if exporter==	"41"
+  replace exporter=          "Romania" 	        if exporter==	"42"
+  replace exporter= "Russian Federation" 		if exporter==	"43"
+  replace exporter=         "Singapore"		    if exporter==	"44"
+  replace exporter=   "Slovak Republic" 	    if exporter==   "45"
+  replace exporter=          "Slovenia" 		if exporter==	"46"
+  replace exporter=      "South Africa" 		if exporter==	"47"
+  replace exporter=            "Spain" 	     	if exporter==	"48"
+  replace exporter=           "Sweden"	    	if exporter==	"49"
+  replace exporter=       "Switzerland" 		if exporter==	"50"
+  replace exporter=          "Thailand" 	    if exporter==	"51"
+  replace exporter=           "Tunisia" 	    if exporter==	"52"
+  replace exporter=          "Turkey" 	     	if exporter==	"53"
+  replace exporter=    "United Kingdom" 		if exporter==	"54"
+  replace exporter=    "United States"	        if exporter==	"55"
+  replace exporter=        "Viet Nam"		    if exporter==	"56"
+
+gen COU="."
+
+ replace COU="ARG"    if exporter== "Argentina"  
+ replace  COU="AUS"   if exporter== "Australia" 		 
+ replace  COU="AUT"   if exporter==  "Austria"	    	
+ replace  COU="BEL"   if exporter== "Belgium"				
+ replace  COU="BRA"   if exporter=="Brazil" 			
+ replace  COU="BGR"   if exporter=="Bulgaria"	    
+ replace  COU="CAN"   if exporter== "Canada"			
+ replace  COU="CHL"   if exporter==	"Chile"		
+ replace  COU="CHN"   if exporter==   "China" 		
+ replace  COU="TWN"   if exporter== "Chinese Taipei" 			
+ replace  COU="COL"   if exporter==  "Columbia"			
+ replace  COU="HRV"   if exporter==   "Croatia" 		
+ replace  COU="CYP"   if exporter== "Cyprus" 			
+ replace  COU="CZE"   if exporter=="Czech Republic"			
+ replace  COU="DNK"   if exporter=="Denmark" 	   	
+ replace  COU="EST"   if exporter=="Estonia" 			
+ replace  COU="FIN"   if exporter=="Finland" 			
+ replace  COU="FRA"   if exporter=="France" 			
+ replace  COU="DEU"   if exporter=="Germany"
+ replace  COU="GRC"   if exporter=="Greece" 	    	
+ replace  COU="HKG"   if exporter=="Hong Kong, China" 		
+ replace  COU="HUN"   if exporter=="Hungary" 		
+ replace  COU="IDN"   if exporter==   "India" 		
+ replace  COU="IND"   if exporter=="Indonesia" 		
+ replace  COU="IRL"   if exporter==  "Ireland" 		
+ replace  COU="ISR"   if exporter==  "Israel"		
+ replace  COU="ITA"   if exporter==    "Italy" 		
+ replace  COU="JPN"   if exporter==   "Japan" 		
+ replace  COU="KOR"   if exporter==   "Korea" 		
+ replace  COU="LVA"   if exporter==  "Latvia" 		 
+ replace  COU="LTU"   if exporter=="Lithuania" 		 
+ replace  COU="LUX"   if exporter=="Luxembourg" 		 
+ replace  COU="MYS"   if exporter=="Malaysia" 	 
+ replace  COU="MEX"   if exporter==  "Mexico" 		 
+ replace  COU="NLD"   if exporter== "Netherlands" 		 
+ replace  COU="NZL"   if exporter=="New Zealand" 	 
+ replace  COU="NOR"   if exporter==    "Norway" 			 
+ replace  COU="PHL"   if exporter== "Philippines" 		 
+ replace  COU="POL"   if exporter==      "Poland"	 
+ replace  COU="PRT"   if exporter== "Portugal" 		 
+ replace  COU="ROW"   if exporter=="Rest of the World" 			 
+ replace  COU="ROU"   if exporter== "Romania" 			 
+ replace  COU="RUS"   if exporter=="Russian Federation" 		 
+ replace  COU="SGP"   if exporter=="Singapore"		 
+ replace  COU="SVK"   if exporter=="Slovak Republic" 			 
+ replace  COU="SVN"   if exporter== "Slovenia" 		 
+ replace  COU="ZAF"   if exporter== "South Africa" 		 
+ replace  COU="ESP"   if exporter== "Spain" 		  
+ replace  COU="SWE"   if exporter== "Sweden"		 
+ replace  COU="CHE"   if exporter=="Switzerland" 		  
+ replace  COU="THA"   if exporter=="Thailand" 	 
+ replace  COU="TUN"   if exporter=="Tunisia" 	 
+ replace  COU="TUR"   if exporter== "Turkey" 		 
+ replace  COU="GBR"   if exporter=="United Kingdom" 		 
+ replace  COU="USA"   if exporter=="United States"
+ replace  COU="VNM"   if exporter=="Viet Nam"
+
+
+replace industry= "Agriculture.hunting.forestry.and.fishing" if industry=="1" 
+replace industry= "Basic.metals.and.fabricated.metal.products" if industry=="2" 
+replace industry= "Chemicals.and.chemical.products" if industry=="3" 
+replace industry="Coke.refined.petroleum.products.and.nuclear.fuel"     if industry=="4"
+replace industry= "Community.social.and.personal.services." if industry=="5" 
+replace industry="Construction"     if industry=="6"
+replace industry="Electrical.and.optical.equipment"     if industry=="7"
+replace industry="Financial.intermediation"     if industry=="8"
+replace industry="Food.products.beverages.and.tobacco" 	 if industry=="9"
+replace industry= "Hotels.and.restaurants" if industry=="10" 
+replace industry= "Machinery.and.equipment.nec."    if industry=="11" 
+replace industry= "Manufacturing.nec.recycling." if industry=="12" 
+replace industry= "Other.non-metallic.mineral.products" if industry=="13" 
+replace industry="Pulp.paper.paper.products.printing.and.publishing"  if industry=="14" 
+replace industry="Real.estate.renting.and.business.activities"     if industry=="15"
+replace industry="Rubber.and.plastics.products"  if industry=="16"
+replace industry="Textiles.textile.products.leather.and.footwear"     if industry=="17"
+replace industry="Transport.equipment"  if industry=="18"
+replace industry="Transport.storage.post.telecommunication"  if industry=="19"
+replace industry="Wholesale.and.retail.trade.repairs"  if industry=="20"
+replace industry="Wood.and.products.of.wood.and.cork"  if industry=="21"
+
+gen IND="."
+replace IND="01T05" if industry=="Agriculture.hunting.forestry.and.fishing"
+replace IND="15T16" if industry=="Food.products.beverages.and.tobacco"
+replace IND="17T19" if industry=="Textiles.textile.products.leather.and.footwear"
+replace IND="20" if industry=="Wood.and.products.of.wood.and.cork"
+replace IND="21T22" if industry=="Pulp.paper.paper.products.printing.and.publishing"
+replace IND="23" if industry=="Coke.refined.petroleum.products.and.nuclear.fuel"
+replace IND="24" if industry=="Chemicals.and.chemical.products"
+replace IND="25" if industry=="Rubber.and.plastics.products"
+replace IND="26" if industry=="Other.non-metallic.mineral.products"
+replace IND="27T28" if industry=="Basic.metals.and.fabricated.metal.products"
+replace IND="29"	 if industry=="Machinery.and.equipment.nec."  
+replace IND="30T33" if industry=="Electrical.and.optical.equipment"
+replace IND="34T35" if industry=="Transport.equipment"
+replace IND="36T37" if industry=="Manufacturing.nec.recycling."
+replace IND="45"    if industry=="Construction" 
+replace IND="50T52" if industry=="Wholesale.and.retail.trade.repairs" 
+replace IND="55"    if industry=="Hotels.and.restaurants" 
+replace IND="60T64" if industry=="Transport.storage.post.telecommunication" 
+replace IND="65T67" if industry=="Financial.intermediation" 
+replace IND="70T74" if industry=="Real.estate.renting.and.business.activities" 
+replace IND="75T95" if industry=="Community.social.and.personal.services." 
+
+
+		gen z_ROW_AGR= z if COU=="ROW" & IND =="01T05"
+	    egen z_ROW_AGR_m = mean(z_ROW_AGR)
+		drop z_ROW_AGR
+		rename z_ROW_AGR_m z_ROW_AGR
+
+		gen z_ROW = z if COU=="ROW"
+		bys industry:	egen z_ROW_m = mean(z_ROW)
+		drop z_ROW
+		rename z_ROW_m z_ROW
+		
+		gen z_AGR= z if IND == "01T05"
+		bys exporter: egen z_AGR_m = mean(z_AGR)
+		drop z_AGR
+		rename z_AGR_m z_AGR
+				egen z_m= mean(z)
+	
+
+		gen sector= z * z_ROW_AGR/(z_ROW*z_AGR)
+	
+	
+rename z revealed_productivity_2005
+				drop z_*
+drop industry
+drop exporter
+*reshape wide sector, i(exporter) j(IND) string			
+
+		save ricardo_va_2005.dta, replace
+/*
+dataout, save(table_va2) tex dec(2) replace
+dataout, save(table_va2) excel dec(2) replace
+outsheet exporter sector2 using "ricardo_VA_2005_try.csv", comma names replace
+*/
+	*** Make Relative Revealed Productivity Levels table using EXGR for 2005 
+	version 12
+set more off /*full output is displayed
+w/o having to hit the space bar in between*/
+*capture log close //closes any previously opened log-files
+clear all
+set maxvar  32767
+set matsize 11000
+cd "$dir/Working_Data"
+use "thesis_data2_va_exgr_20_july_2015",clear
+gen logexport_va=log(EXGR_2005)
+
+ 
+
+eststo clear
+		eststo: quietly regress logexport_va alpha* beta* gamma*, nocons
+cd "$dir/Results"
+	* esttab using temp6.csv, replace not nostar b(a4) 
+insheet using temp6.csv, clear
+
+		rename v1 name
+		rename v2 value
+		drop if name=="" | name=="N"
+		replace value = "" if value=="0"
+		destring value, replace
+		gen name1 = subinstr(name,"alpha", "",.)
+		replace name1 = subinstr(name1, "beta", "", .)
+		replace name1 = subinstr(name1, "gamma", "", .)
+		replace name1 = subinstr(name1, "o.", "", .)
+		split name1, gen(name1_) parse("dum")
+		rename name1_1 idtype_1
+		rename name1_3 id_2
+		gen idtype_2 = substr(name1_2,-1,1)
+		gen id_1 = subinstr(name1_2, "j", "", .)
+		replace id_1 = subinstr(id_1, "k", "", .)
+		drop name1_2
+		destring id_1 id_2, replace
+		drop name name1
+		
+		keep if idtype_1=="i" & idtype_2=="k"
+		
+		rename id_1 i_id
+		rename id_2 k_id
+			
+		drop idtype_1 idtype_2
+	
+		rename value FE_ik_
+		replace FE_ik = 0 if FE_ik ==.
+		
+		*reshape wide FE_ik, i(i_id) j(k_id)
+		*drop i_id
+		
+	
+		*gen i_id = _n
+		*reshape long FE_ik_, i(i_id) j(k_id)
+		gen z = exp(FE_ik_/14.76)
+		drop FE_ik_
+		rename i_id exporter
+		rename k_id industry
+		
+    tostring industry, replace
+    tostring exporter, replace
+  replace exporter= "Argentina"                 if exporter==	"1"
+  replace exporter=          "Australia"        if exporter==	"2"
+  replace exporter=           "Austria"	        if exporter==	"3"
+  replace exporter=            "Belgium"   	    if exporter==	"4"
+  replace exporter=           "Brazil" 		    if exporter==	"5"
+  replace exporter=           "Bulgaria"	    if exporter==	"6"
+  replace exporter=             "Canada"		if exporter==	"7"
+  replace exporter=              "Chile"		if exporter==	"8"
+  replace exporter=              "China" 		if exporter==	"9"
+  replace exporter=     "Chinese Taipei" 		if exporter==	"10"
+  replace exporter=         "Columbia"		    if exporter==	"11"
+  replace exporter=          "Croatia" 		    if exporter==	"12"
+  replace exporter=            "Cyprus" 		if exporter==	"13"
+  replace exporter=     "Czech Republic"		if exporter==	"14"
+  replace exporter=           "Denmark" 	    if exporter==	"15"
+  replace exporter=           "Estonia" 		if exporter==	"16"
+  replace exporter=           "Finland" 		if exporter==	"17"
+  replace exporter=           "France" 		    if exporter==	"18"
+  replace exporter=           "Germany" 		if exporter==	"19"
+  replace exporter=            "Greece" 	    if exporter==	"20"
+  replace exporter=  "Hong Kong, China" 		if exporter==	"21"
+  replace exporter=           "Hungary" 		if exporter==	"22"
+  replace exporter=             "India" 		if exporter==	"23"
+  replace exporter=         "Indonesia" 		if exporter==	"24"
+  replace exporter=           "Ireland" 		if exporter==	"25"
+  replace exporter=           "Israel"	     	if exporter==	"26"
+  replace exporter=             "Italy" 		if exporter==	"27"
+  replace exporter=             "Japan" 		if exporter==	"28"
+  replace exporter=           "Korea" 	      	if exporter==	"29"
+  replace exporter=          "Latvia" 		    if exporter==	"30"
+  replace exporter=       "Lithuania" 		    if exporter==	"31"
+  replace exporter=      "Luxembourg" 		    if exporter==	"32"
+  replace exporter=        "Malaysia" 	        if exporter==	"33"
+  replace exporter=         "Mexico" 		    if exporter==	"34"
+  replace exporter=    "Netherlands" 		    if exporter==	"35"
+  replace exporter=       "New Zealand" 	    if exporter==	"36"
+  replace exporter=           "Norway" 	        if exporter==	"37"
+  replace exporter=       "Philippines" 		if exporter==	"38"
+  replace exporter=           "Poland"   	    if exporter==	"39"
+  replace exporter=         "Portugal" 		    if exporter==	"40"
+  replace exporter= "Rest of the World" 	    if exporter==	"41"
+  replace exporter=          "Romania" 	        if exporter==	"42"
+  replace exporter= "Russian Federation" 		if exporter==	"43"
+  replace exporter=         "Singapore"		    if exporter==	"44"
+  replace exporter=   "Slovak Republic" 	    if exporter==   "45"
+  replace exporter=          "Slovenia" 		if exporter==	"46"
+  replace exporter=      "South Africa" 		if exporter==	"47"
+  replace exporter=            "Spain" 	     	if exporter==	"48"
+  replace exporter=           "Sweden"	    	if exporter==	"49"
+  replace exporter=       "Switzerland" 		if exporter==	"50"
+  replace exporter=          "Thailand" 	    if exporter==	"51"
+  replace exporter=           "Tunisia" 	    if exporter==	"52"
+  replace exporter=          "Turkey" 	     	if exporter==	"53"
+  replace exporter=    "United Kingdom" 		if exporter==	"54"
+  replace exporter=    "United States"	        if exporter==	"55"
+  replace exporter=        "Viet Nam"		    if exporter==	"56"
+
+gen COU="."
+
+ replace COU="ARG"    if exporter== "Argentina"  
+ replace  COU= "AUS"  if exporter== "Australia" 		 
+ replace  COU="AUT"   if exporter==  "Austria"	    	
+ replace  COU="BEL"   if exporter== "Belgium"				
+ replace  COU="BRA"   if exporter=="Brazil" 			
+ replace  COU= "BGR"  if exporter=="Bulgaria"	    
+ replace  COU="CAN"   if exporter== "Canada"			
+ replace  COU=  "CHL" if exporter==	"Chile"		
+ replace  COU="CHN"   if exporter==   "China" 		
+ replace  COU="TWN"   if exporter== "Chinese Taipei" 			
+ replace  COU="COL"   if exporter==  "Columbia"			
+ replace  COU="HRV"   if exporter==   "Croatia" 		
+ replace  COU="CYP"   if exporter== "Cyprus" 			
+ replace  COU="CZE"   if exporter=="Czech Republic"			
+ replace  COU="DNK"   if exporter=="Denmark" 	   	
+ replace  COU="EST"   if exporter=="Estonia" 			
+ replace  COU="FIN"   if exporter=="Finland" 			
+ replace  COU="FRA"   if exporter=="France" 			
+ replace  COU="DEU"   if exporter=="Germany"
+ replace  COU="GRC"   if exporter=="Greece" 	    	
+ replace  COU="HKG"   if exporter=="Hong Kong, China" 		
+ replace  COU="HUN"   if exporter=="Hungary" 		
+ replace  COU="IDN"   if exporter==   "India" 		
+ replace  COU="IND"   if exporter=="Indonesia" 		
+ replace  COU="IRL"   if exporter==  "Ireland" 		
+ replace  COU="ISR"   if exporter==  "Israel"		
+ replace  COU="ITA"   if exporter==    "Italy" 		
+ replace  COU="JPN"   if exporter==   "Japan" 		
+ replace  COU="KOR"   if exporter==   "Korea" 		
+ replace  COU="LVA"   if exporter==  "Latvia" 		 
+ replace  COU="LTU"   if exporter=="Lithuania" 		 
+ replace  COU="LUX"   if exporter=="Luxembourg" 		 
+ replace  COU="MYS"   if exporter=="Malaysia" 	 
+ replace  COU="MEX"   if exporter==  "Mexico" 		 
+ replace  COU="NLD"   if exporter== "Netherlands" 		 
+ replace  COU="NZL"   if exporter=="New Zealand" 	 
+ replace  COU="NOR"   if exporter==    "Norway" 			 
+ replace  COU="PHL"   if exporter== "Philippines" 		 
+ replace  COU="POL"   if exporter==      "Poland"	 
+ replace  COU="PRT"   if exporter== "Portugal" 		 
+ replace  COU="ROW"   if exporter=="Rest of the World" 			 
+ replace  COU="ROU"   if exporter== "Romania" 			 
+ replace  COU="RUS"   if exporter=="Russian Federation" 		 
+ replace  COU="SGP"   if exporter=="Singapore"		 
+ replace  COU="SVK"   if exporter=="Slovak Republic" 			 
+ replace  COU="SVN"    if exporter== "Slovenia" 		 
+ replace  COU="ZAF"   if exporter== "South Africa" 		 
+ replace  COU="ESP"   if exporter== "Spain" 		  
+ replace  COU="SWE"   if exporter== "Sweden"		 
+ replace  COU="CHE"   if exporter=="Switzerland" 		  
+ replace  COU="THA"   if exporter=="Thailand" 	 
+ replace  COU="TUN"   if exporter=="Tunisia" 	 
+ replace  COU="TUR"   if exporter== "Turkey" 		 
+ replace  COU="GBR"   if exporter=="United Kingdom" 		 
+ replace  COU="USA"   if exporter=="United States"
+ replace  COU="VNM"   if exporter=="Viet Nam"
+
+
+replace industry= "Agriculture.hunting.forestry.and.fishing" if industry=="1" 
+replace industry= "Basic.metals.and.fabricated.metal.products" if industry=="2" 
+replace industry= "Chemicals.and.chemical.products" if industry=="3" 
+replace industry="Coke.refined.petroleum.products.and.nuclear.fuel"     if industry=="4"
+replace industry= "Community.social.and.personal.services." if industry=="5" 
+replace industry="Construction"     if industry=="6"
+replace industry="Electrical.and.optical.equipment"     if industry=="7"
+replace industry="Financial.intermediation"     if industry=="8"
+replace industry="Food.products.beverages.and.tobacco" 	 if industry=="9"
+replace industry= "Hotels.and.restaurants" if industry=="10" 
+replace industry= "Machinery.and.equipment.nec."    if industry=="11" 
+replace industry= "Manufacturing.nec.recycling." if industry=="12" 
+replace industry= "Other.non-metallic.mineral.products" if industry=="13" 
+replace industry="Pulp.paper.paper.products.printing.and.publishing"  if industry=="14" 
+replace industry="Real.estate.renting.and.business.activities"     if industry=="15"
+replace industry="Rubber.and.plastics.products"  if industry=="16"
+replace industry="Textiles.textile.products.leather.and.footwear"     if industry=="17"
+replace industry="Transport.equipment"  if industry=="18"
+replace industry="Transport.storage.post.telecommunication"  if industry=="19"
+replace industry="Wholesale.and.retail.trade.repairs"  if industry=="20"
+replace industry="Wood.and.products.of.wood.and.cork"  if industry=="21"
+
+gen IND="."
+replace IND="01T05" if industry=="Agriculture.hunting.forestry.and.fishing"
+replace IND="15T16" if industry=="Food.products.beverages.and.tobacco"
+replace IND="17T19" if industry=="Textiles.textile.products.leather.and.footwear"
+replace IND="20" if industry=="Wood.and.products.of.wood.and.cork"
+replace IND="21T22" if industry=="Pulp.paper.paper.products.printing.and.publishing"
+replace IND="23" if industry=="Coke.refined.petroleum.products.and.nuclear.fuel"
+replace IND="24" if industry=="Chemicals.and.chemical.products"
+replace IND="25" if industry=="Rubber.and.plastics.products"
+replace IND="26" if industry=="Other.non-metallic.mineral.products"
+replace IND="27T28" if industry=="Basic.metals.and.fabricated.metal.products"
+replace IND="29"	 if industry=="Machinery.and.equipment.nec."  
+replace IND="30T33" if industry=="Electrical.and.optical.equipment"
+replace IND="34T35" if industry=="Transport.equipment"
+replace IND="36T37" if industry=="Manufacturing.nec.recycling."
+replace IND="45"    if industry=="Construction" 
+replace IND="50T52" if industry=="Wholesale.and.retail.trade.repairs" 
+replace IND="55"    if industry=="Hotels.and.restaurants" 
+replace IND="60T64" if industry=="Transport.storage.post.telecommunication" 
+replace IND="65T67" if industry=="Financial.intermediation" 
+replace IND="70T74" if industry=="Real.estate.renting.and.business.activities" 
+replace IND="75T95" if industry=="Community.social.and.personal.services." 
+
+ 	
+		gen z_ROW_AGR= z if COU=="ROW" & IND =="01T05"
+	    egen z_ROW_AGR_m = mean(z_ROW_AGR)
+		drop z_ROW_AGR
+		rename z_ROW_AGR_m z_ROW_AGR
+
+		gen z_ROW = z if COU=="ROW"
+		bys industry:	egen z_ROW_m = mean(z_ROW)
+		drop z_ROW
+		rename z_ROW_m z_ROW
+		
+		gen z_AGR= z if IND == "01T05"
+		bys exporter: egen z_AGR_m = mean(z_AGR)
+		drop z_AGR
+		rename z_AGR_m z_AGR
+				
+		gen sector_exgr= z * z_ROW_AGR/(z_ROW*z_AGR)
+					
+rename z revealed_productivity_exgr_2005
+drop z*
+
+ drop exporter
+drop industry
+*reshape wide sector_exgr, i(exporter) j(IND) string			
+save ricardo_exgr_2005, replace
+/*		
+dataout, save(table_va2) tex dec(2) replace
+dataout, save(table_va2) excel dec(2) replace
+outsheet exporter sector_exgr using "ricardo_EXGR_2005_try.csv", comma names replace
+*/
+		*** Make Relative Revealed Productivity Levels table using VA for 1995 
+version 12
+set more off /*full output is displayed
+w/o having to hit the space bar in between*/
+capture log close //closes any previously opened log-files
+clear all
+set maxvar  32767
+set matsize 11000
+cd "$dir/Working_Data"
+log using "thesis_table_VA_1995_02_11_2015", text replace
+use "thesis_data2_va_exgr_20_july_2015",clear
+capture: eststo clear	
+
+
+gen logexport_va=log(VA_1995)
+
+
+ 
+
+eststo clear
+		eststo: quietly regress logexport_va alpha* beta* gamma*, nocons
+cd "$dir/Results" 
+* esttab using temp5.csv, replace not nostar b(a4) 
+	insheet using temp5.csv, clear
+
+		rename v1 name
+		rename v2 value
+		drop if name=="" | name=="N"
+		replace value = "" if value=="0"
+		destring value, replace
+		gen name1 = subinstr(name,"alpha", "",.)
+		replace name1 = subinstr(name1, "beta", "", .)
+		replace name1 = subinstr(name1, "gamma", "", .)
+		replace name1 = subinstr(name1, "o.", "", .)
+		split name1, gen(name1_) parse("dum")
+		rename name1_1 idtype_1
+		rename name1_3 id_2
+		gen idtype_2 = substr(name1_2,-1,1)
+		gen id_1 = subinstr(name1_2, "j", "", .)
+		replace id_1 = subinstr(id_1, "k", "", .)
+		drop name1_2
+		destring id_1 id_2, replace
+		drop name name1
+		
+		keep if idtype_1=="i" & idtype_2=="k"
+		
+		rename id_1 i_id
+		rename id_2 k_id
+			
+		drop idtype_1 idtype_2
+	
+		rename value FE_ik_
+		replace FE_ik = 0 if FE_ik ==.
+		
+		*reshape wide FE_ik, i(i_id) j(k_id)
+		*drop i_id
+		
+	
+		*gen i_id = _n
+		*reshape long FE_ik_, i(i_id) j(k_id)
+		gen z = exp(FE_ik_/15.06)
+		drop FE_ik_
+		rename i_id exporter
+		rename k_id industry
+		
+    tostring industry, replace
+    tostring exporter, replace
+
+replace exporter= "Argentina" if exporter==	"1"
+replace exporter=          "Australia" 		if exporter==	"2"
+ replace exporter=           "Austria"	    if exporter==	"3"
+replace exporter=            "Belgium" 	if exporter==	"4"
+replace exporter=           "Brazil" 		if exporter==	"5"
+replace exporter=           "Bulgaria"	    if exporter==	"6"
+replace exporter=             "Canada"		if exporter==	"7"
+replace exporter=              "Chile"		if exporter==	"8"
+replace exporter=              "China" 		if exporter==	"9"
+replace exporter=     "Chinese Taipei" 		if exporter==	"10"
+ replace exporter=         "Columbia"		if exporter==	"11"
+ replace exporter=          "Croatia" 		if exporter==	"12"
+ replace exporter=            "Cyprus" 		if exporter==	"13"
+replace exporter=     "Czech Republic"		if exporter==	"14"
+ replace exporter=           "Denmark" 	    if exporter==	"15"
+ replace exporter=           "Estonia" 		if exporter==	"16"
+ replace exporter=           "Finland" 		if exporter==	"17"
+ replace exporter=           "France" 		if exporter==	"18"
+ replace exporter=           "Germany" 		if exporter==	"19"
+ replace exporter=            "Greece" 	    if exporter==	"20"
+ replace exporter=  "Hong Kong, China" 		if exporter==	"21"
+ replace exporter=           "Hungary" 		if exporter==	"22"
+ replace exporter=             "India" 		if exporter==	"23"
+ replace exporter=         "Indonesia" 		if exporter==	"24"
+ replace exporter=           "Ireland" 		if exporter==	"25"
+  replace exporter=           "Israel"		if exporter==	"26"
+ replace exporter=             "Italy" 		if exporter==	"27"
+ replace exporter=             "Japan" 		if exporter==	"28"
+   replace exporter=           "Korea" 		if exporter==	"29"
+   replace exporter=          "Latvia" 		if exporter==	"30"
+   replace exporter=       "Lithuania" 		if exporter==	"31"
+   replace exporter=      "Luxembourg" 		if exporter==	"32"
+   replace exporter=        "Malaysia" 	if exporter==	"33"
+    replace exporter=         "Mexico" 		if exporter==	"34"
+    replace exporter=    "Netherlands" 		if exporter==	"35"
+ replace exporter=       "New Zealand" 	if exporter==	"36"
+  replace exporter=           "Norway" 			if exporter==	"37"
+ replace exporter=       "Philippines" 		if exporter==	"38"
+  replace exporter=           "Poland"	if exporter==	"39"
+  replace exporter=         "Portugal" 		if exporter==	"40"
+ replace exporter= "Rest of the World" 			if exporter==	"41"
+  replace exporter=          "Romania" 			if exporter==	"42"
+replace exporter= "Russian Federation" 		if exporter==	"43"
+ replace exporter=         "Singapore"		if exporter==	"44"
+ replace exporter=   "Slovak Republic" 			if exporter=="45"
+ replace exporter=          "Slovenia" 		if exporter==	"46"
+ replace exporter=      "South Africa" 		if exporter==	"47"
+  replace exporter=            "Spain" 		if exporter==	"48"
+ replace exporter=           "Sweden"		if exporter==	"49"
+ replace exporter=       "Switzerland" 		if exporter==	"50"
+ replace exporter=          "Thailand" 	if exporter==	"51"
+ replace exporter=           "Tunisia" 	if exporter==	"52"
+   replace exporter=          "Turkey" 		if exporter==	"53"
+ replace exporter=    "United Kingdom" 		if exporter==	"54"
+  replace exporter=    "United States"			if exporter==	"55"
+   replace exporter=        "Viet Nam"			if exporter==	"56"
+
+gen COU="."
+
+ replace COU="ARG"    if exporter== "Argentina"  
+ replace  COU= "AUS"  if exporter== "Australia" 		 
+ replace  COU="AUT"   if exporter==  "Austria"	    	
+ replace  COU="BEL"   if exporter== "Belgium"				
+ replace  COU="BRA"   if exporter=="Brazil" 			
+ replace  COU= "BGR"  if exporter=="Bulgaria"	    
+ replace  COU="CAN"   if exporter== "Canada"			
+ replace  COU=  "CHL" if exporter==	"Chile"		
+ replace  COU="CHN"   if exporter==   "China" 		
+ replace  COU="TWN"   if exporter== "Chinese Taipei" 			
+ replace  COU="COL"   if exporter==  "Columbia"			
+ replace  COU="HRV"   if exporter==   "Croatia" 		
+ replace  COU="CYP"   if exporter== "Cyprus" 			
+ replace  COU="CZE"   if exporter=="Czech Republic"			
+ replace  COU="DNK"   if exporter=="Denmark" 	   	
+ replace  COU="EST"   if exporter=="Estonia" 			
+ replace  COU="FIN"   if exporter=="Finland" 			
+ replace  COU="FRA"   if exporter=="France" 			
+ replace  COU="DEU"   if exporter=="Germany"
+ replace  COU="GRC"   if exporter=="Greece" 	    	
+ replace  COU="HKG"   if exporter=="Hong Kong, China" 		
+ replace  COU="HUN"   if exporter=="Hungary" 		
+ replace  COU="IDN"   if exporter==   "India" 		
+ replace  COU="IND"   if exporter=="Indonesia" 		
+ replace  COU="IRL"   if exporter==  "Ireland" 		
+ replace  COU="ISR"   if exporter==  "Israel"		
+ replace  COU="ITA"   if exporter==    "Italy" 		
+ replace  COU="JPN"   if exporter==   "Japan" 		
+ replace  COU="KOR"   if exporter==   "Korea" 		
+ replace  COU="LVA"   if exporter==  "Latvia" 		 
+ replace  COU="LTU"   if exporter=="Lithuania" 		 
+ replace  COU="LUX"   if exporter=="Luxembourg" 		 
+ replace  COU="MYS"   if exporter=="Malaysia" 	 
+ replace  COU="MEX"   if exporter==  "Mexico" 		 
+ replace  COU="NLD"   if exporter== "Netherlands" 		 
+ replace  COU="NZL"   if exporter=="New Zealand" 	 
+ replace  COU="NOR"   if exporter==    "Norway" 			 
+ replace  COU="PHL"   if exporter== "Philippines" 		 
+ replace  COU="POL"   if exporter==      "Poland"	 
+ replace  COU="PRT"   if exporter== "Portugal" 		 
+ replace  COU="ROW"   if exporter=="Rest of the World" 			 
+ replace  COU="ROU"   if exporter== "Romania" 			 
+ replace  COU="RUS"   if exporter=="Russian Federation" 		 
+ replace  COU="SGP"   if exporter=="Singapore"		 
+ replace  COU="SVK"   if exporter=="Slovak Republic" 			 
+ replace  COU="SVN"    if exporter== "Slovenia" 		 
+ replace  COU="ZAF"   if exporter== "South Africa" 		 
+ replace  COU="ESP"   if exporter== "Spain" 		  
+ replace  COU="SWE"   if exporter== "Sweden"		 
+ replace  COU="CHE"   if exporter=="Switzerland" 		  
+ replace  COU="THA"   if exporter=="Thailand" 	 
+ replace  COU="TUN"   if exporter=="Tunisia" 	 
+ replace  COU="TUR"   if exporter== "Turkey" 		 
+ replace  COU="GBR"   if exporter=="United Kingdom" 		 
+ replace  COU="USA"   if exporter=="United States"
+ replace  COU="VNM"   if exporter=="Viet Nam"
+				 
+
+
+
+replace industry= "Agriculture.hunting.forestry.and.fishing" if industry=="1" 
+replace industry= "Basic.metals.and.fabricated.metal.products" if industry=="2" 
+replace industry= "Chemicals.and.chemical.products" if industry=="3" 
+replace industry="Coke.refined.petroleum.products.and.nuclear.fuel"     if industry=="4"
+replace industry= "Community.social.and.personal.services." if industry=="5" 
+replace industry="Construction"     if industry=="6"
+replace industry="Electrical.and.optical.equipment"     if industry=="7"
+replace industry="Financial.intermediation"     if industry=="8"
+replace industry="Food.products.beverages.and.tobacco" 	 if industry=="9"
+replace industry= "Hotels.and.restaurants" if industry=="10" 
+replace industry= "Machinery.and.equipment.nec."    if industry=="11" 
+replace industry= "Manufacturing.nec.recycling." if industry=="12" 
+replace industry= "Other.non-metallic.mineral.products" if industry=="13" 
+replace industry="Pulp.paper.paper.products.printing.and.publishing"  if industry=="14" 
+replace industry="Real.estate.renting.and.business.activities"     if industry=="15"
+replace industry="Rubber.and.plastics.products"  if industry=="16"
+replace industry="Textiles.textile.products.leather.and.footwear"     if industry=="17"
+replace industry="Transport.equipment"  if industry=="18"
+replace industry="Transport.storage.post.telecommunication"  if industry=="19"
+replace industry="Wholesale.and.retail.trade.repairs"  if industry=="20"
+replace industry="Wood.and.products.of.wood.and.cork"  if industry=="21"
+
+gen IND="."
+replace IND="01T05" if industry=="Agriculture.hunting.forestry.and.fishing"
+replace IND="15T16" if industry=="Food.products.beverages.and.tobacco"
+replace IND="17T19" if industry=="Textiles.textile.products.leather.and.footwear"
+replace IND="20" if industry=="Wood.and.products.of.wood.and.cork"
+replace IND="21T22" if industry=="Pulp.paper.paper.products.printing.and.publishing"
+replace IND="23" if industry=="Coke.refined.petroleum.products.and.nuclear.fuel"
+replace IND="24" if industry=="Chemicals.and.chemical.products"
+replace IND="25" if industry=="Rubber.and.plastics.products"
+replace IND="26" if industry=="Other.non-metallic.mineral.products"
+replace IND="27T28" if industry=="Basic.metals.and.fabricated.metal.products"
+replace IND="29"	 if industry=="Machinery.and.equipment.nec."  
+replace IND="30T33" if industry=="Electrical.and.optical.equipment"
+replace IND="34T35" if industry=="Transport.equipment"
+replace IND="36T37" if industry=="Manufacturing.nec.recycling."
+replace IND="45"    if industry=="Construction" 
+replace IND="50T52" if industry=="Wholesale.and.retail.trade.repairs" 
+replace IND="55"    if industry=="Hotels.and.restaurants" 
+replace IND="60T64" if industry=="Transport.storage.post.telecommunication" 
+replace IND="65T67" if industry=="Financial.intermediation" 
+replace IND="70T74" if industry=="Real.estate.renting.and.business.activities" 
+replace IND="75T95" if industry=="Community.social.and.personal.services." 
+
+ 	
+	gen z_ROW_AGR= z if COU=="ROW" & IND =="01T05"
+	    egen z_ROW_AGR_m = mean(z_ROW_AGR)
+		drop z_ROW_AGR
+		rename z_ROW_AGR_m z_ROW_AGR
+
+		gen z_ROW = z if COU=="ROW"
+		bys industry:	egen z_ROW_m = mean(z_ROW)
+		drop z_ROW
+		rename z_ROW_m z_ROW
+		
+		gen z_AGR = z if IND == "01T05"
+		bys exporter: egen z_AGR_m = mean(z_AGR)
+		drop z_AGR
+		rename z_AGR_m z_AGR
+				
+		gen sector_VA_95= z * z_ROW_AGR/(z_ROW*z_AGR)
+
+rename z revealed_productivity_1995
+	drop industry
+ drop exporter
+save ricardo_VA_1995, replace
+use centrality_1995_2005, clear
+
+ 
+*merge with other results
+merge 1:1 COU IND using ricardo_VA_2005
+drop _merge
+merge 1:1 COU IND using ricardo_VA_1995
+drop _merge
+merge 1:1 COU IND using  ricardo_exgr_2005
+drop _merge
+drop z*
+preserve
+ drop in_centrality_normalized_1995 in_centrality_normalized_2005 in_eigen_va_1995 in_eigen_va_2005 out_centrality_normalized_1995 out_centrality_normalized_2005 out_eigen_va_1995 out_eigen_va_2005
+
+
+save ricardo_EXGR_VA_2005_1995, replace
+restore
+*outsheet COU IND revealed_productivity_1995 revealed_productivity_2005 revealed_productivity_exgr_2005 sector sector_2 sector_VA_1995_2 sector_VA_95 sector_exgr sector_exgr2 using "ricardo_results.csv", comma names replace
+
+
+*outsheet COU IND in_eigen_va_1995 in_eigen_va_2005 in_centrality_normalized_1995 in_centrality_normalized_2005 out_eigen_va_1995 out_eigen_va_2005 out_centrality_normalized_1995 out_centrality_normalized_2005 revealed_productivity_1995 revealed_productivity_2005 revealed_productivity_exgr_2005 sector sector_2 sector_VA_1995_2 sector_VA_95 sector_exgr sector_exgr2 using "ricardo_centrality.csv", comma names replace
+
+cd /Users/sergej/Documents/Master/Thesis/June_Empirical_Analysis/Send_Liza/Results
+save results_02_11_2015, replace
+/* Deleted
+use results_31_07_2015, clear
+local year 1995 2005
+* Create normaliziation similar to Balessa Index like in Leromain and Orefice (2014)
+foreach j of local year{
+foreach i in in out {
+ 					egen centrality_`i'_`j'_m= mean(`i'_centrality_VA_`j')
+				bys IND: egen centrality_`i'_`j'_k=mean(`i'_centrality_VA_`j')
+				bys COU: egen centrality_`i'_`j'_i=mean(`i'_centrality_VA_`j')
+				gen centrality_`i'_dollar_`j'_2=`i'_centrality_VA_`j'*centrality_`i'_`j'_m/(centrality_`i'_`j'_k*centrality_`i'_`j'_i)
+}	
+}
+
+drop centrality_*_*_m centrality_*_*_k centrality_*_*_i
+
+local year 1995 2005
+foreach j of local year{
+
+gen centrality_`j'_ROW_AGR_in= in_centrality_VA_`j' if COU=="BEL" & IND =="15T16"
+	    egen centrality_`j'_ROW_AGR_in_m = mean(centrality_`j'_ROW_AGR_in)
+		drop centrality_`j'_ROW_AGR_in
+		rename centrality_`j'_ROW_AGR_in_m  centrality_`j'_ROW_AGR_in
+
+		gen centrality_`j'_ROW_in =in_centrality_VA_`j' if COU=="BEL"
+		bys IND:	egen centrality_`j'_ROW_in_m = mean(centrality_`j'_ROW_in)
+		drop centrality_`j'_ROW_in
+		rename centrality_`j'_ROW_in_m centrality_`j'_ROW_in
+		
+		gen centrality_`j'_AGR_in = in_centrality_VA_`j' if IND == "15T16"
+		bys COU: egen centrality_`j'_AGR_in_m = mean(centrality_`j'_AGR_in)
+		drop centrality_`j'_AGR_in
+		rename centrality_`j'_AGR_in_m centrality_`j'_AGR_in
+				
+		gen centrality_`j'_USA_VA_in= in_centrality_VA_`j' * centrality_`j'_ROW_AGR_in/(centrality_`j'_ROW_in*centrality_`j'_AGR_in)
+
+}
+*robustness check
+		
+		gen z_US_Food = revealed_productivity_2005 if COU=="USA"  & IND == "15T16"
+		egen z_US_Food_m = mean(z_US_Food)
+		drop z_US_Food
+		rename z_US_Food_m z_US_Food
+
+		gen z_US = z if COU=="USA" 
+		bys IND:	egen z_US_m = mean(z_US)
+		drop z_US
+		rename z_US_m z_US
+		
+		gen z_Food = revealed_productivity_2005 if IND == "15T16"
+		bys COU: egen z_Food_m = mean(z_Food)
+		drop z_Food
+		rename z_Food_m z_Food
+				
+		gen output = revealed_productivity_2005 * z_US_Food/(z_US*z_Food)
+		drop z*
+
+	gen centr_ROW_AGR= in_centrality_VA_2005 if COU=="USA" & IND =="15T16"
+	    egen centr_ROW_AGR_m = mean(centr_ROW_AGR)
+		drop centr_ROW_AGR
+		rename centr_ROW_AGR_m centr_ROW_AGR
+
+		gen centr_ROW = in_centrality_VA_2005  if COU=="USA"
+		bys IND:	egen centr_ROW_m = mean(centr_ROW)
+		drop centr_ROW
+		rename centr_ROW_m centr_ROW
+		
+		gen centr_AGR= in_centrality_VA_2005  if IND == "15T16"
+		bys COU: egen centr_AGR_m = mean(centr_AGR)
+		drop centr_AGR
+		rename centr_AGR_m centr_AGR
+				
+		gen centrality_US_FOOD= in_centrality_VA_2005* centr_ROW_AGR/(centr_ROW*centr_AGR)
+		drop centr_*
+
+  
+
+
+
+**add info on country groups: G8, G20, OECD, APEC
+**APEC group: 21 economies but no info on Papua New Guinea or Peru
+gen apec=0
+local apec AUS BRN CAN CHL CHN HKG IDN JPN KOR MYS MEX NZL PHL RUS SGP TAI THA USA VNM
+foreach a of local apec {
+	replace apec=1 if iso3alpha=="`a'"
+}
+*G8 group: 8 economies 
+gen g8=0
+local g8 CAN JPN RUS USA FRA GBR DEU ITA
+foreach a of local g8 {
+	replace g8=1 if iso3alpha=="`a'"
+}
+*G20 group: 19 members + 1 permanent guest (Spain) 
+gen g20=0
+local g20 ARG AUS BRA CAN CHN FRA DEU IND IDN ITA JPN KOR MEX RUS SAU ZAF TUR GBR USA ESP
+foreach a of local g20 {
+	replace g20=1 if iso3alpha=="`a'"
+}
+*OECD group: 34 countries 
+gen oecd=0
+local oecd AUS AUT BEL CAN CHL CZE DNK EST FIN FRA DEU GRC HUN ISL IRL ISR ITA JPN KOR LUX MEX NLD NZL NOR POL PRT SVK SVN ESP SWE CHE TUR GBR USA
+foreach a of local oecd {
+	replace oecd=1 if iso3alpha=="`a'"
+}
+*/
