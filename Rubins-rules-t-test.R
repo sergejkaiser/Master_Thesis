@@ -272,6 +272,7 @@ return(t.stat.p.val)
  results.dva.final<-report.final(results.dva)
   results.fddva.final<-report.final(results.fddva)
   results.exgr.final<-report.final(results.exgr)
+  #print results as latex table
   xtable(results.dva.final,
          digits=3)
   xtable(results.fddva.final,
