@@ -1,0 +1,240 @@
+library(reshape2)
+library(car)
+library(qpcR)
+library(xtable)
+library(Hmisc)
+library(plyr)
+library(foreign)
+setwd("/Users/sergej/Google Drive/Send_liza/results")
+#here correlation for assumption equal theta for EXGR and FDDVA 
+results.raw<-read.dta("results_march_raw.dta")
+results.raw$IND<-gsub("T","-", results.raw$IND)
+
+#subset and create df for each measure
+norm.prod.va.diff.2005<-subset(results.raw, select=c("z_dva_std","COU","IND"))
+norm.prod.fd.va.diff.2005<-subset(results.raw, select=c("z_fddva_std","COU","IND"))
+norm.prod.diff.exgr.2005<-subset(results.raw, select=c("z_exgr_std","COU","IND"))
+ 
+#reshape wide i COU j IND, resut matrix with each row represents one country and each column one industry further first column contians the country names
+norm.prod.fd.va.diff.2005.wide<-dcast(norm.prod.fd.va.diff.2005, COU ~IND, value.var="z_fddva_std")
+norm.prod.va.diff.2005.wide<-dcast(norm.prod.va.diff.2005, COU ~IND, value.var="z_dva_std")
+norm.prod.diff.exgr.2005.wide<-dcast(norm.prod.diff.exgr.2005, COU ~IND, value.var="z_exgr_std")
+
+#subset to create a matrix without the first column
+ricardo.va.2005.cor<- (norm.prod.va.diff.2005.wide[,2:ncol(norm.prod.va.diff.2005.wide)])
+rownames(ricardo.va.2005.cor)<-norm.prod.diff.exgr.2005.wide[,1]
+ricardo.fd.va.diff.2005.cor<- (norm.prod.fd.va.diff.2005.wide[,2:ncol(norm.prod.fd.va.diff.2005.wide)])
+rownames(ricardo.fd.va.diff.2005.cor)<-norm.prod.diff.exgr.2005.wide[,1]
+ricardo.diff.exgr.2005.cor<-(norm.prod.diff.exgr.2005.wide[,2:ncol(norm.prod.diff.exgr.2005.wide)])
+rownames(ricardo.diff.exgr.2005.cor)<-norm.prod.diff.exgr.2005.wide[,1]
+
+#Correlation Structural RCA VA 2005 EXGR2005
+pearson.va.exgr<-diag(cor(t(ricardo.va.2005.cor),t(ricardo.diff.exgr.2005.cor),method="kendall"))
+
+spearman.va.exgr<-diag(cor(t(ricardo.va.2005.cor),t(ricardo.diff.exgr.2005.cor),method="spearman"))
+rownames(Cor.pearson.spear.va.exgr<-cbind(pearson.va.exgr,spearman.va.exgr))
+         rownames(Cor.pearson.spear.va.exgr)<-rownames(ricardo.diff.exgr.2005.cor)
+         #create empty container for test values
+Cor.test.pear.va.exgr.ricardo<-matrix(0, nrow = nrow(ricardo.diff.exgr.2005.cor), ncol = 1)
+Cor.test.spear.va.exgr.ricardo<-matrix(0, nrow = nrow(ricardo.diff.exgr.2005.cor), ncol = 1)
+#test for each vecotr
+for (i in 1: nrow(ricardo.diff.exgr.2005.cor)) {
+  Cor.test.pear.va.exgr.ricardo[i,]<-as.vector(cor.test(as.vector(t(ricardo.diff.exgr.2005.cor)[,i]), as.vector(t(ricardo.va.2005.cor)[,i]),method = c("kendall"))[[3]])
+}
+for (i in 1: nrow(ricardo.diff.exgr.2005.cor)) {
+  Cor.test.spear.va.exgr.ricardo[i,]<-as.vector(cor.test(as.vector(t(ricardo.diff.exgr.2005.cor)[,i]), as.vector(t(ricardo.va.2005.cor)[,i]),method = c("spearman"))[[3]])
+}
+
+colnames(Cor.test.pear.va.exgr.ricardo)<-c('p-val pearson')
+
+colnames(Cor.test.spear.va.exgr.ricardo)<-c('p-val spearman')
+
+Cor.pearson.spear.va.exgr<-cbind(Cor.pearson.spear.va.exgr,Cor.test.pear.va.exgr.ricardo)
+Cor.pearson.spear.va.exgr<-cbind(Cor.pearson.spear.va.exgr,Cor.test.spear.va.exgr.ricardo)
+plot<-as.data.frame(Cor.pearson.spear.va.exgr)
+plot$COU<-rownames(plot)
+
+#Correlation Structural RCA FDDVA 2005 DVA2005
+pearson.fddva.diff.va<-diag(cor(t(ricardo.fd.va.diff.2005.cor),t(ricardo.va.2005.cor),method="kendall"))
+spearman.fddva.diff.va<-diag(cor(t(ricardo.fd.va.diff.2005.cor),t(ricardo.va.2005.cor),method="spearman"))
+Cor.pearson.spear.fddva.diff.va<-cbind(pearson.fddva.diff.va,spearman.fddva.diff.va)
+rownames(Cor.pearson.spear.fddva.diff.va)<-rownames(ricardo.fd.va.diff.2005.cor)
+Cor.test.pear.fddva.diff.va.ricardo<-matrix(0, nrow = 43, ncol = 1)
+Cor.test.spear.fddva.diff.va.ricardo<-matrix(0, nrow =43, ncol = 1)
+
+for (i in 1: nrow(Cor.pearson.spear.fddva.diff.va)) {
+  Cor.test.pear.fddva.diff.va.ricardo[i,]<-as.vector(cor.test(as.vector(t(ricardo.fd.va.diff.2005.cor)[,i]), as.vector(t(ricardo.va.2005.cor)[,i]),method = c("kendall"))[[3]])
+}
+for (i in 1: nrow(Cor.pearson.spear.fddva.diff.va)) {
+  Cor.test.spear.fddva.diff.va.ricardo[i,]<-as.vector(cor.test(as.vector(t(ricardo.fd.va.diff.2005.cor)[,i]), as.vector(t(ricardo.va.2005.cor)[,i]),method = c("spearman"))[[3]])
+}
+
+colnames(Cor.test.pear.fddva.diff.va.ricardo)<-c('t-val kendall')
+
+colnames(Cor.test.spear.fddva.diff.va.ricardo)<-c('t-val spearman')
+
+mean(diag(cor(t(ricardo.fd.va.diff.2005.cor),t(ricardo.va.2005.cor),method="spearman")))
+mean(diag(cor(t(ricardo.fd.va.diff.2005.cor),t(ricardo.va.2005.cor),method="kendall")))
+
+
+Cor.pearson.spear.fddva.diff.va.w.test<-Cor.pearson.spear.fddva.diff.va
+Cor.pearson.spear.fddva.diff.va<-cbind(Cor.pearson.spear.fddva.diff.va,Cor.test.pear.fddva.diff.va.ricardo)
+Cor.pearson.spear.fddva.diff.va<-cbind(Cor.pearson.spear.fddva.diff.va,Cor.test.spear.fddva.diff.va.ricardo)
+
+plot.diff.fd.dva<-as.data.frame(Cor.pearson.spear.fddva.diff.va)
+plot.diff.fd.dva$COU<-rownames(plot.diff.fd.dva)
+xtable(plot.diff.fd.dva)
+
+ggplot(plot.diff.fd.dva, aes(x=COU, y=spearman.fddva.diff.va)) +
+  geom_bar(stat="identity", position="dodge", fill="#D3D3D3", colour="black") +
+  scale_x_discrete("Country")+
+  scale_y_continuous("Rank Correlation" ) +
+  ggtitle(expression(atop("Rank correlation structural RCA EXGR and Forw. VAX")))+
+  theme_bw()+
+  theme( legend.position = "bottom", # legend location in graph
+         panel.grid.minor = element_blank(),
+         axis.title=element_text( size="10"),
+         axis.text.x=element_text(angle = 90, size=10))+
+  geom_hline(yintercept=0.79) #mean
+
+ggplot(plot.diff.fd.dva, aes(x=COU, y=pearson.fddva.diff.va)) +
+  geom_bar(stat="identity", position="dodge", fill="#D3D3D3", colour="black") +
+  scale_x_discrete("Country")+
+  scale_y_continuous("Correlation kendall-tau", breaks=c(0.00,0.25,0.50,0.75,1.00)) +
+  ggtitle(expression(atop("Kendall tau correlation structural RCA EXGR and Forw. VAX")))+
+  theme_bw()+
+  theme( legend.position = "bottom", # legend location in graph
+         panel.grid.minor = element_blank(),
+         axis.title=element_text( size="10"),
+         axis.text.x=element_text(angle = 90, size=10))+
+  geom_hline(yintercept=0.63) #mean
+
+#EXGR #fddva
+
+pearson.fddva.diff.exgr<-diag(cor(t(ricardo.fd.va.diff.2005.cor),t(ricardo.diff.exgr.2005.cor),method="kendall"))
+spearman.fddva.diff.exgr<-diag(cor(t(ricardo.fd.va.diff.2005.cor),t(ricardo.diff.exgr.2005.cor),method="spearman"))
+Cor.pearson.spear.fddva.diff.exgr<-cbind(pearson.fddva.diff.exgr,spearman.fddva.diff.exgr)
+rownames(Cor.pearson.spear.fddva.diff.exgr)<-rownames(ricardo.fd.va.diff.2005.cor)
+Cor.test.pear.fddva.diff.exgr.ricardo<-matrix(0, nrow = 43, ncol = 1)
+Cor.test.spear.fddva.diff.exgr.ricardo<-matrix(0, nrow =43, ncol = 1)
+
+for (i in 1: nrow(Cor.pearson.spear.fddva.diff.va)) {
+  Cor.test.pear.fddva.diff.exgr.ricardo[i,]<-as.vector(cor.test(as.vector(t(ricardo.fd.va.diff.2005.cor)[,i]), as.vector(t(ricardo.diff.exgr.2005.cor)[,i]),method = c("kendall"))[[3]])
+}
+for (i in 1: nrow(Cor.pearson.spear.fddva.diff.va)) {
+  Cor.test.spear.fddva.diff.exgr.ricardo[i,]<-as.vector(cor.test(as.vector(t(ricardo.fd.va.diff.2005.cor)[,i]),as.vector(t(ricardo.diff.exgr.2005.cor)[,i]),method = c("spearman"))[[3]])
+}
+
+colnames(Cor.test.pear.fddva.diff.exgr.ricardo)<-c('t-val kendall')
+
+colnames(Cor.test.spear.fddva.diff.exgr.ricardo)<-c('t-val spearman')
+
+Cor.pearson.spear.fddva.diff.exgr.w.test<-Cor.pearson.spear.fddva.diff.exgr
+Cor.pearson.spear.fddva.diff.exgr<-cbind(Cor.pearson.spear.fddva.diff.exgr,Cor.test.pear.fddva.diff.exgr.ricardo)
+Cor.pearson.spear.fddva.diff.exgr<-cbind(Cor.pearson.spear.fddva.diff.exgr,Cor.test.spear.fddva.diff.exgr.ricardo)
+mean(diag(cor(t(ricardo.fd.va.diff.2005.cor),t(ricardo.diff.exgr.2005.cor),method="spearman")))
+plot.diff.fd<-as.data.frame(Cor.pearson.spear.fddva.diff.exgr.w.test)
+
+plot.diff.fd$COU<-rownames(plot.diff.fd)
+xtable(plot.diff.fd[,1:2])
+
+GDP.cntry<-read.csv(file="/Users/sergej/Google Drive/Send_liza/Original_Data/GDP_per_capita_World_Development_Indicators_Data.csv",na.strings = "..")
+GDP.cntry<-subset(GDP.cntry, select=c("Country.Code" ,    "X2005..YR2005."))
+GDP.cntry$Country.Code<-as.character(GDP.cntry$Country.Code)
+library(dplyr)
+GDP.cntry <-rename(GDP.cntry, GDP.per.capita.2005 = X2005..YR2005., COU = Country.Code )
+
+
+GDP.cntry.consistent<-subset(GDP.cntry, COU %in% c(unique(results.raw$COU)))
+GDP.cntry.consistent$GDP.per.capita.2005<-GDP.cntry.consistent$GDP.per.capita.2005/1000
+
+plot.diff.fd <- merge(plot.diff.fd, GDP.cntry.consistent,by="COU")
+#create function calc slope 
+lm_eqn = function(m) {
+  
+  l <- list(a = format(coef(m)[1], digits = 2),
+            b = format(abs(coef(m)[2]), digits = 2),
+            r2 = format(summary(m)$r.squared, digits = 2));
+  
+  if (coef(m)[2] >= 0)  {
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,l)
+  } else {
+    eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,l)    
+  }
+  
+  as.character(as.expression(eq));                 
+}
+setwd("/Users/sergej/Documents/Thesis/fig")
+plot  <- merge(plot , GDP.cntry.consistent,by="COU")
+
+#export as tikz file
+tikz(file = "spearman_exgr_dva_std_balassa-march.tex")
+ggplot(plot, aes(x=GDP.per.capita.2005, y=spearman.va.exgr)) +
+  geom_point(size=0.8) + 
+  geom_text(aes(label=COU, size=0.8, hjust=1.0, vjust=-0.5))+
+  geom_smooth(method=lm,   # Add linear regression line
+              se=F,color="black", size=1.0)+
+  scale_x_continuous("GDP per capita (constant thousand 2005 US)")+
+  scale_y_continuous("Correlation", limits=c(0.7,1) ) +
+  ggtitle(expression(atop("Rank Correlation RCA EXGR Back. VAX and GDP per Capita")))+
+  theme_bw()+
+  annotate("text", x = 55, y = 0.88, label = lm_eqn(lm(spearman.va.exgr ~ GDP.per.capita.2005, plot)),colour="black", size = 4, parse=TRUE)+
+  theme( legend.position = "none", # legend location in graph
+         panel.grid.minor = element_blank(),
+         axis.title=element_text( size="10"),
+         axis.text.x=element_text(angle = 0, size=10))
+dev.off()
+plot2<-select(plot.diff.fd, GDP.per.capita.2005, spearman.fddva.diff.exgr)
+tikz(file = "kendall_dva_exgr_std_balassa-march.tex")
+ggplot(plot, aes(x=GDP.per.capita.2005, y=pearson.va.exgr)) +
+  geom_point() +
+  geom_text(aes(label=COU, size=8,hjust=1, vjust=-0.5,check_overlap = TRUE))+
+  geom_smooth(method=lm,   # Add linear regression line
+              se=T, color="black")+
+  scale_x_continuous("GDP per capita constant thousand 2005 US")+
+  scale_y_continuous("Correlation" ) +
+
+  ggtitle(expression(atop("Kendalls's tau RCA EXGR Back. VAX with GDP per Capita")))+
+  theme_bw()+
+  annotate("text", x = 55, y = 0.88, label = lm_eqn(lm(pearson.va.exgr ~ GDP.per.capita.2005, plot)),colour="black", size = 5, parse=TRUE)+
+  theme( legend.position = "none", # legend location in graph
+         panel.grid.minor = element_blank(),
+         axis.title=element_text( size="10"),
+         axis.text.x=element_text(angle = 0, size=10))
+dev.off()
+tikz(file = "spearman_fddva_std_balassa-march.tex")
+ggplot(plot.diff.fd, aes(x=GDP.per.capita.2005, y=spearman.fddva.diff.exgr)) +
+  geom_point() + 
+  geom_text(aes(label=COU, size=8,hjust=1, vjust=-0.5))+
+  geom_smooth(method=lm,   # Add linear regression line
+              se=F,color="black")+
+  scale_x_continuous("GDP per capita (constant thousand 2005 US)")+
+  scale_y_continuous("Correlation" ) +
+  coord_cartesian(ylim = c(0.47, 0.97))+
+  ggtitle(expression(atop("Rank Correlation RCA EXGR Forw. VAX and GDP per Capita")))+
+  theme_bw()+
+  annotate("text", x = 60, y = 0.9, label = lm_eqn(lm(spearman.fddva.diff.exgr ~ GDP.per.capita.2005, plot.diff.fd)),colour="black", size = 5, parse=TRUE)+
+  theme( legend.position = "none", # legend location in graph
+         panel.grid.minor = element_blank(),
+         axis.title=element_text( size="10"),
+         axis.text.x=element_text(angle = 0, size=10))
+dev.off()
+
+tikz(file = "kendall_fddva_exgr_std_balassa-march.tex")
+ggplot(plot.diff.fd, aes(x=GDP.per.capita.2005, y=pearson.fddva.diff.exgr)) +
+  geom_point() +
+  geom_text(aes(label=COU, size=8,hjust=1, vjust=-0.5,check_overlap = TRUE))+
+  geom_smooth(method=lm,   # Add linear regression line
+              se=F, color="black")+ 
+              #without uncertainty bounds, black
+  scale_x_continuous("GDP per capita constant thousand 2005 US")+
+  scale_y_continuous("Correlation" ) +
+  coord_cartesian(ylim = c(0.4, .8))+
+  ggtitle(expression(atop("Kendalls's tau RCA EXGR Forw. VAX with GDP per Capita")))+
+  theme_bw()+
+  annotate("text", x = 60, y = 0.75, label = lm_eqn(lm(pearson.fddva.diff.exgr ~ GDP.per.capita.2005, plot.diff.fd)),colour="black", size = 5, parse=TRUE)+
+  theme( legend.position = "none", # legend location in graph
+         panel.grid.minor = element_blank(),
+         axis.title=element_text( size="10"),
+         axis.text.x=element_text(angle = 0, size=10))
+dev.off()
